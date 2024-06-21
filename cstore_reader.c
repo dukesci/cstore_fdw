@@ -862,7 +862,7 @@ BuildRestrictInfoList(List *whereClauseList)
 		RestrictInfo *restrictInfo = NULL;
 		Node *qualNode = (Node *) lfirst(qualCell);
 
-		restrictInfo = make_simple_restrictinfo((Expr *) qualNode);
+		restrictInfo = make_simple_restrictinfo(NULL, (Expr *) qualNode);
 		restrictInfoList = lappend(restrictInfoList, restrictInfo);
 	}
 

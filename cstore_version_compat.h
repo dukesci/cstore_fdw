@@ -32,7 +32,11 @@
 	ExplainPropertyInteger(qlabel, NULL, value, es)
 #endif
 
-#if PG_VERSION_NUM >= 130000
+#if PG_VERSION_NUM >= 140000
+#define CALL_PREVIOUS_UTILITY() \
+	PreviousProcessUtilityHook(plannedStatement, queryString, readOnlyTree, context, paramListInfo, \
+							   queryEnvironment, destReceiver, queryCompletion)
+#elif PG_VERSION_NUM >= 130000
 #define CALL_PREVIOUS_UTILITY() \
 	PreviousProcessUtilityHook(plannedStatement, queryString, context, paramListInfo, \
 							   queryEnvironment, destReceiver, queryCompletion)

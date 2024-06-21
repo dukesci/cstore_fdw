@@ -76,7 +76,14 @@
 
 
 /* local functions forward declarations */
-#if PG_VERSION_NUM >= 130000
+#if PG_VERSION_NUM >= 140000
+static void CStoreProcessUtility(PlannedStmt *plannedStatement, const char *queryString,
+								 bool readOnlyTree,
+								 ProcessUtilityContext context,
+					 			 ParamListInfo paramListInfo,
+					 			 QueryEnvironment *queryEnvironment,
+					 			 DestReceiver *destReceiver, QueryCompletion *queryCompletion);
+#elif PG_VERSION_NUM >= 130000
 static void CStoreProcessUtility(PlannedStmt *plannedStatement, const char *queryString,
 								 ProcessUtilityContext context,
 								 ParamListInfo paramListInfo,
@@ -278,7 +285,15 @@ cstore_ddl_event_end_trigger(PG_FUNCTION_ARGS)
  * the previous utility hook or the standard utility command via macro
  * CALL_PREVIOUS_UTILITY.
  */
-#if PG_VERSION_NUM >= 130000
+#if PG_VERSION_NUM >= 140000
+static void
+CStoreProcessUtility(PlannedStmt *plannedStatement, const char *queryString,
+					 bool readOnlyTree,
+					 ProcessUtilityContext context,
+					 ParamListInfo paramListInfo,
+					 QueryEnvironment *queryEnvironment,
+					 DestReceiver *destReceiver, QueryCompletion *queryCompletion)
+#elif PG_VERSION_NUM >= 130000
 static void
 CStoreProcessUtility(PlannedStmt *plannedStatement, const char *queryString,
 					 ProcessUtilityContext context,
@@ -301,7 +316,19 @@ CStoreProcessUtility(Node * parseTree, const char * queryString,
 #endif
 {
 #if PG_VERSION_NUM >= 100000
-	Node *parseTree = plannedStatement->utilityStmt;
+	#if PG_VERSION_NUM >= 140000
+        Node *parseTree;
+		if (readOnlyTree) 
+		{
+			parseTree = ((PlannedStmt*)copyObjectImpl(plannedStatement))->utilityStmt;
+		}
+		else 
+		{
+			parseTree = plannedStatement->utilityStmt;
+		}
+	#else
+		Node *parseTree = plannedStatement->utilityStmt;
+	#endif	
 #endif
 
 	if (nodeTag(parseTree) == T_CopyStmt)
@@ -544,7 +571,11 @@ CopyIntoCStoreTable(const CopyStmt *copyStatement, const char *queryString)
 	Oid relationId = InvalidOid;
 	TupleDesc tupleDescriptor = NULL;
 	uint32 columnCount = 0;
+#if (PG_VERSION_NUM >= 140000)		
+	CopyFromState copyState = NULL;
+#elif (PG_VERSION_NUM >= 100000)	
 	CopyState copyState = NULL;
+#endif
 	bool nextRowFound = true;
 	Datum *columnValues = NULL;
 	bool *columnNulls = NULL;
@@ -589,11 +620,18 @@ CopyIntoCStoreTable(const CopyStmt *copyStatement, const char *queryString)
 		ParseState *pstate = make_parsestate(NULL);
 		pstate->p_sourcetext = queryString;
 
-		copyState = BeginCopyFrom(pstate, relation, copyStatement->filename,
-								  copyStatement->is_program,
-								  NULL,
-								  copyStatement->attlist,
-								  copyStatement->options);
+		#if (PG_VERSION_NUM >= 140000)
+			copyState = BeginCopyFrom(pstate, relation, NULL, copyStatement->filename,
+									copyStatement->is_program,
+									NULL,
+									copyStatement->attlist,
+    								copyStatement->options);
+		#else
+			copyState = BeginCopyFrom(pstate, relation, copyStatement->filename,
+									copyStatement->is_program,
+									copyStatement->attlist,
+									copyStatement->options);
+		#endif
 		free_parsestate(pstate);
 	}
 #else
@@ -671,7 +709,7 @@ CopyOutCStoreTable(CopyStmt* copyStatement, const char* queryString)
 	qualifiedName = quote_qualified_identifier(relation->schemaname,
 											   relation->relname);
 	appendStringInfo(newQuerySubstring, "select * from %s", qualifiedName);
-	queryList = raw_parser(newQuerySubstring->data);
+	queryList = raw_parser(newQuerySubstring->data, RAW_PARSE_DEFAULT);
 
 	/* take the first parse tree */
 	rawQuery = linitial(queryList);
@@ -717,7 +755,7 @@ CopyOutCStoreTable(CopyStmt* copyStatement, const char* queryString)
 static void
 CStoreProcessAlterTableCommand(AlterTableStmt *alterStatement)
 {
-	ObjectType objectType = alterStatement->relkind;
+	ObjectType objectType = alterStatement->objtype;
 	RangeVar *relationRangeVar = alterStatement->relation;
 	Oid relationId = InvalidOid;
 	List *commandList = alterStatement->cmds;
