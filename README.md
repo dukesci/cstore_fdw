@@ -1,3 +1,8 @@
+## dukesci memo
+Support for PostgreSQL 14. Free to use, but no warranty.
+There is the Citus extension that supports 14+, but it's too big for us. 
+Modified because we only need the columnar storage part.
+
 ## Important notice: Columnar storage is now part of Citus
 
 Columnar storage is now part of the [Citus extension](https://github.com/citusdata/citus), which uses the table access method API to give a much more native experience. It also supports streaming replication, archival, rollback, and simplifies pg_upgrade. You can use Citus just for columnar storage on a single PostgreSQL server, or combine it with distributed tables to parallelize queries locally or across a cluster of PostgreSQL servers.
