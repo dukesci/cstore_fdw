@@ -1,5 +1,5 @@
 ## dukesci memo
-Support for PostgreSQL 14. Free to use, but no warranty.
+Support for PostgreSQL 14, 15. Free to use, but no warranty.
 There is the Citus extension that supports 14+, but it's too big for us. 
 Modified because we only need the columnar storage part.
 
