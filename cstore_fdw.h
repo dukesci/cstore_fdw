@@ -21,6 +21,9 @@
 #include "catalog/pg_foreign_table.h"
 #include "lib/stringinfo.h"
 #include "utils/rel.h"
+#if PG_VERSION_NUM >= 160000
+#include "nodes/pathnodes.h"
+#endif
 
 
 /* Defines for valid option names */
@@ -272,7 +275,9 @@ typedef struct TableReadState
 	uint64 stripeReadRowCount;
 	ColumnBlockData **blockDataArray;
 	int32 deserializedBlockIndex;
-
+#if PG_VERSION_NUM >= 160000
+	PlannerInfo *root;
+#endif
 } TableReadState;
 
 

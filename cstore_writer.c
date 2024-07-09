@@ -499,8 +499,7 @@ FlushStripe(TableWriteState *writeState)
 	StringInfo *skipListBufferArray = NULL;
 	StripeFooter *stripeFooter = NULL;
 	StringInfo stripeFooterBuffer = NULL;
-	uint32 columnIndex = 0;
-	uint32 blockIndex = 0;
+	uint32 columnIndex = 0;	
 	TableFooter *tableFooter = writeState->tableFooter;
 	FILE *tableFile = writeState->tableFile;
 	StripeBuffers *stripeBuffers = writeState->stripeBuffers;
@@ -529,6 +528,7 @@ FlushStripe(TableWriteState *writeState)
 		uint64 currentExistsBlockOffset = 0;
 		uint64 currentValueBlockOffset = 0;
 		ColumnBuffers *columnBuffers = stripeBuffers->columnBuffersArray[columnIndex];
+		uint32 blockIndex = 0;
 
 		for (blockIndex = 0; blockIndex < blockCount; blockIndex++)
 		{

@@ -18,7 +18,9 @@
 #include "cstore_metadata_serialization.h"
 #include "cstore.pb-c.h"
 #include "access/tupmacs.h"
-
+#if PG_VERSION_NUM >= 160000
+#include "varatt.h"
+#endif
 
 /* local functions forward declarations */
 static ProtobufCBinaryData DatumToProtobufBinary(Datum datum, bool typeByValue,
