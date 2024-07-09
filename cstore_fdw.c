@@ -1709,7 +1709,7 @@ CStoreDefaultFilePath(Oid foreignTableId)
 	RelFileLocator relationFileNode = relation->rd_locator;
 	Oid databaseOid = relationFileNode.dbOid;
 	RelFileNumber relationFileOid = relationFileNode.relNumber;
-#elif
+#else
 	RelFileNode relationFileNode = relation->rd_node;
 	Oid databaseOid = relationFileNode.dbNode;
 	Oid relationFileOid = relationFileNode.relNode;
