@@ -1888,11 +1888,7 @@ CStoreGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreignTableId,
 	 * it into foreign scan node's private list.
 	 */
 	columnList = ColumnList(baserel, foreignTableId);
-#if PG_VERSION_NUM >= 160000
-	foreignPrivateList = list_make2(columnList, root);
-#else
 	foreignPrivateList = list_make1(columnList);
-#endif
 
 	/* create the foreign scan node */
 #if PG_VERSION_NUM >= 90500
@@ -2114,9 +2110,6 @@ CStoreBeginForeignScan(ForeignScanState *scanState, int executorFlags)
 	ForeignScan *foreignScan = NULL;
 	List *foreignPrivateList = NIL;
 	List *whereClauseList = NIL;
-#if PG_VERSION_NUM >= 160000
-	PlannerInfo *root = NULL;
-#endif
 
 	/* if Explain with no Analyze, do nothing */
 	if (executorFlags & EXEC_FLAG_EXPLAIN_ONLY)
@@ -2134,11 +2127,6 @@ CStoreBeginForeignScan(ForeignScanState *scanState, int executorFlags)
 	columnList = (List *) linitial(foreignPrivateList);
 	readState = CStoreBeginRead(cstoreFdwOptions->filename, tupleDescriptor,
 								columnList, whereClauseList);
-#if PG_VERSION_NUM >= 160000
-	root = lsecond(foreignPrivateList);
-	readState->root = root;
-#endif
-
 	scanState->fdw_state = (void *) readState;
 }
 
@@ -2279,11 +2267,7 @@ CStoreAcquireSampleRows(Relation relation, int logLevel,
 	}
 
 	/* setup foreign scan plan node */
-#if PG_VERSION_NUM >= 160000
-	foreignPrivateList = list_make2(columnList, NULL);
-#else
 	foreignPrivateList = list_make1(columnList);
-#endif
 	foreignScan = makeNode(ForeignScan);
 	foreignScan->fdw_private = foreignPrivateList;
 

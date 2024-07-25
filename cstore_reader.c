@@ -42,20 +42,11 @@
 #endif
 
 /* static function declarations */
-#if PG_VERSION_NUM >= 160000
-static StripeBuffers * LoadFilteredStripeBuffers(FILE *tableFile,
-												 StripeMetadata *stripeMetadata,
-												 TupleDesc tupleDescriptor,
-												 List *projectedColumnList,
-												 List *whereClauseList,
-												 PlannerInfo *root);
-#else
 static StripeBuffers * LoadFilteredStripeBuffers(FILE *tableFile,
 												 StripeMetadata *stripeMetadata,
 												 TupleDesc tupleDescriptor,
 												 List *projectedColumnList,
 												 List *whereClauseList);
-#endif
 static void ReadStripeNextRow(StripeBuffers *stripeBuffers, List *projectedColumnList,
 							  uint64 blockIndex, uint64 blockRowIndex,
 							  ColumnBlockData **blockDataArray,
@@ -73,16 +64,9 @@ static StripeSkipList * LoadStripeSkipList(FILE *tableFile,
 										   uint32 columnCount,
 										   bool *projectedColumnMask,
 										   TupleDesc tupleDescriptor);
-#if PG_VERSION_NUM >= 160000
-static bool * SelectedBlockMask(StripeSkipList *stripeSkipList,
-								List *projectedColumnList, List *whereClauseList,
-								PlannerInfo *root);
-static List * BuildRestrictInfoList(List *whereClauseList, PlannerInfo *root);
-#else
 static bool * SelectedBlockMask(StripeSkipList *stripeSkipList,
 								List *projectedColumnList, List *whereClauseList);
 static List * BuildRestrictInfoList(List *whereClauseList);
-#endif
 static Node * BuildBaseConstraint(Var *variable);
 static OpExpr * MakeOpExpression(Var *variable, int16 strategyNumber);
 static Oid GetOperatorByType(Oid typeId, Oid accessMethodId, int16 strategyNumber);
@@ -279,18 +263,10 @@ CStoreReadNextRow(TableReadState *readState, Datum *columnValues, bool *columnNu
 		MemoryContextReset(readState->stripeReadContext);
 
 		stripeMetadata = list_nth(stripeMetadataList, readState->readStripeCount);
-#if PG_VERSION_NUM >= 160000
-		stripeBuffers = LoadFilteredStripeBuffers(readState->tableFile, stripeMetadata,
-												  readState->tupleDescriptor,
-												  readState->projectedColumnList,
-												  readState->whereClauseList,
-												  readState->root);
-#else
 		stripeBuffers = LoadFilteredStripeBuffers(readState->tableFile, stripeMetadata,
 												  readState->tupleDescriptor,
 												  readState->projectedColumnList,
 												  readState->whereClauseList);
-#endif
 		readState->readStripeCount++;
 
 		MemoryContextSwitchTo(oldContext);
@@ -494,15 +470,9 @@ StripeRowCount(FILE *tableFile, StripeMetadata *stripeMetadata)
  * and only loads columns that are projected in the query.
  */
 static StripeBuffers *
-#if PG_VERSION_NUM >= 160000
-LoadFilteredStripeBuffers(FILE *tableFile, StripeMetadata *stripeMetadata,
-						  TupleDesc tupleDescriptor, List *projectedColumnList,
-						  List *whereClauseList, PlannerInfo *root)
-#else
 LoadFilteredStripeBuffers(FILE *tableFile, StripeMetadata *stripeMetadata,
 						  TupleDesc tupleDescriptor, List *projectedColumnList,
 						  List *whereClauseList)
-#endif						  
 {
 	StripeBuffers *stripeBuffers = NULL;
 	ColumnBuffers **columnBuffersArray = NULL;
@@ -519,13 +489,8 @@ LoadFilteredStripeBuffers(FILE *tableFile, StripeMetadata *stripeMetadata,
 														projectedColumnMask,
 														tupleDescriptor);
 	
-#if PG_VERSION_NUM >= 160000
-	bool *selectedBlockMask = SelectedBlockMask(stripeSkipList, projectedColumnList,
-												whereClauseList, root);
-#else
 	bool *selectedBlockMask = SelectedBlockMask(stripeSkipList, projectedColumnList,
 												whereClauseList);
-#endif										
 
 	StripeSkipList *selectedBlockSkipList =
 		SelectedBlockSkipList(stripeSkipList, projectedColumnMask,
@@ -779,22 +744,13 @@ LoadStripeSkipList(FILE *tableFile, StripeMetadata *stripeMetadata,
  * the block can be refuted by the given qualifier conditions.
  */
 static bool *
-#if PG_VERSION_NUM >= 160000
-SelectedBlockMask(StripeSkipList *stripeSkipList, List *projectedColumnList,
-				  List *whereClauseList, PlannerInfo *root)
-#else
 SelectedBlockMask(StripeSkipList *stripeSkipList, List *projectedColumnList,
 				  List *whereClauseList)
-#endif
 {
 	bool *selectedBlockMask = NULL;
 	ListCell *columnCell = NULL;
 	uint32 blockIndex = 0;
-#if PG_VERSION_NUM >= 160000
-	List *restrictInfoList = BuildRestrictInfoList(whereClauseList, root);
-#else
 	List *restrictInfoList = BuildRestrictInfoList(whereClauseList);
-#endif
 
 	selectedBlockMask = palloc0(stripeSkipList->blockCount * sizeof(bool));
 	memset(selectedBlockMask, true, stripeSkipList->blockCount * sizeof(bool));
@@ -898,11 +854,7 @@ GetFunctionInfoOrNull(Oid typeId, Oid accessMethodId, int16 procedureId)
  * logic.
  */
 static List *
-#if PG_VERSION_NUM >= 160000
-BuildRestrictInfoList(List *whereClauseList, PlannerInfo *root)
-#else
 BuildRestrictInfoList(List *whereClauseList)
-#endif
 {
 	List *restrictInfoList = NIL;
 
@@ -913,7 +865,9 @@ BuildRestrictInfoList(List *whereClauseList)
 		Node *qualNode = (Node *) lfirst(qualCell);
 
 #if PG_VERSION_NUM >= 160000
-		restrictInfo = make_simple_restrictinfo(root, (Expr *) qualNode);
+		struct PlannerInfo dummyRoot;
+		dummyRoot.outer_join_rels = NULL;
+		restrictInfo = make_simple_restrictinfo(&dummyRoot, (Expr *) qualNode);
 #else
 		restrictInfo = make_simple_restrictinfo(NULL, (Expr *) qualNode);
 #endif

@@ -275,9 +275,6 @@ typedef struct TableReadState
 	uint64 stripeReadRowCount;
 	ColumnBlockData **blockDataArray;
 	int32 deserializedBlockIndex;
-#if PG_VERSION_NUM >= 160000
-	PlannerInfo *root;
-#endif
 } TableReadState;
 
 
