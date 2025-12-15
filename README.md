@@ -1,7 +1,8 @@
 ## dukesci memo
-Support for PostgreSQL 14, 15, 16. Free to use, but no warranty.
-There is the Citus extension that supports 14+, but it's too big for us. 
-Modified because we only need the columnar storage part.
+This modification was made because the Citus extension supporting PostgreSQL 14+ is too large for our needs. 
+Furthermore, it uses the AGPL license, which would require us to keep our source code public.
+We only require the columnar storage functionality.
+This source code remains small and continues to use the Apache License.
 
 ## Important notice: Columnar storage is now part of Citus
 
