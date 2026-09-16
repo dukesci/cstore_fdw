@@ -1822,7 +1822,18 @@ CStoreGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreignTableId
 	double totalCost  = startupCost + totalCpuCost + totalDiskAccessCost;
 
 	/* create a foreign path node and add it as the only possible path */
-#if PG_VERSION_NUM >= 90600
+#if PG_VERSION_NUM >= 170000
+	foreignScanPath = (Path *) create_foreignscan_path(root, baserel,
+													   NULL, /* path target */
+													   baserel->rows,
+													   startupCost, totalCost,
+													   NIL,  /* no known ordering */
+													   NULL, /* not parameterized */
+													   NULL, /* no outer path */
+													   NIL,  /* no fdw_restrictinfo */
+													   NIL); /* no fdw_private */
+
+#elif PG_VERSION_NUM >= 90600
 	foreignScanPath = (Path *) create_foreignscan_path(root, baserel,
 													   NULL, /* path target */
 													   baserel->rows,
